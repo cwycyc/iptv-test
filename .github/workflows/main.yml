@@ -1,0 +1,43 @@
+name: 自动同步上游仓库
+
+on:
+  workflow_dispatch: # 允许手动触发
+  schedule:
+    - cron: '0 2 * * *' # 每天UTC时间2点（北京时间上午10点）自动运行
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 检出所有历史，便于同步
+
+      - name: 配置 Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: 添加上游远程仓库
+        run: |
+          git remote add upstream https://github.com/0987363/iptv-chengdu.git
+          # 或者，如果你想用SSH方式（如果仓库是公开的，HTTPS就够了）：
+          # git remote add upstream git@github.com:0987363/iptv-chengdu.git
+
+      - name: 获取上游更新
+        run: git fetch upstream
+
+      - name: 合并上游分支（请确认分支名）
+        run: |
+          # 请先确认上游仓库和你Fork的默认分支名！
+          # 常见的分支名是 'main' 或 'master'。
+          # 你可以去原仓库页面 https://github.com/0987363/iptv-chengdu 查看。
+          # 假设上游分支是 'main'，你的分支也是 'main'：
+          git merge upstream/master --no-ff --no-edit
+        # 如果出现合并冲突，这一步会失败，工作流会停止。
+        # 这是安全的设计，防止自动覆盖你的代码。
+
+      - name: 推送更新到自己的Fork
+        run: git push origin master # 请确保这里的 'main' 与上面合并的分支名一致
+        # 如果上一步是合并提交，这里可以直接推送。
